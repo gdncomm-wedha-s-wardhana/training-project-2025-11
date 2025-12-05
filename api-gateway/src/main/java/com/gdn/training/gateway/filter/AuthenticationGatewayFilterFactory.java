@@ -49,32 +49,25 @@ public class AuthenticationGatewayFilterFactory
 
                 String finalAuthHeader = authHeader;
 
-                // Redis check bypassed for now as Redis server is not available
-                /*
-                 * return redisTemplate.hasKey(finalAuthHeader)
-                 * .flatMap(isBlacklisted -> {
-                 * if (isBlacklisted) {
-                 * exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                 * return exchange.getResponse().setComplete();
-                 * }
-                 * 
-                 * // Extract username and add to header
-                 * String username = jwtUtil.extractAllClaims(finalAuthHeader).getSubject();
-                 * ServerHttpRequest request = exchange.getRequest().mutate()
-                 * .header("X-User-Name", username)
-                 * .build();
-                 * 
-                 * return chain.filter(exchange.mutate().request(request).build());
-                 * });
-                 */
+                return redisTemplate.hasKey(finalAuthHeader)
+                        .flatMap(isBlacklisted -> {
+                            if (isBlacklisted) {
+                                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                                return exchange.getResponse().setComplete();
+                            }
 
-                // Extract username and add to header
-                String username = jwtUtil.extractAllClaims(finalAuthHeader).getSubject();
-                ServerHttpRequest request = exchange.getRequest().mutate()
-                        .header("X-User-Name", username)
-                        .build();
+                            // Extract username and add to header
+                            io.jsonwebtoken.Claims claims = jwtUtil.extractAllClaims(finalAuthHeader);
+                            String username = claims.getSubject();
+                            String memberId = String.valueOf(claims.get("memberId"));
 
-                return chain.filter(exchange.mutate().request(request).build());
+                            ServerHttpRequest request = exchange.getRequest().mutate()
+                                    .header("X-User-Name", username)
+                                    .header("X-Member-Id", memberId)
+                                    .build();
+
+                            return chain.filter(exchange.mutate().request(request).build());
+                        });
             }
             return chain.filter(exchange);
         });
