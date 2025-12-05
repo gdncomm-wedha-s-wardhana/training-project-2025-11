@@ -18,7 +18,11 @@ public class CartController {
     @PostMapping("/add")
     public ResponseEntity<Cart> addToCart(
             @RequestHeader("X-User-Name") String username,
+            @RequestHeader(value = "X-Member-Id", required = false) Long memberId,
             @RequestBody AddToCartRequest request) {
+        if (memberId != null) {
+            request.setMemberId(memberId);
+        }
         return ResponseEntity.ok(cartService.addToCart(username, request));
     }
 

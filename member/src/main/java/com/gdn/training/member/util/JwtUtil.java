@@ -50,8 +50,9 @@ public class JwtUtil {
         return (extractedUsername.equals(username) && !isTokenExpired(token));
     }
 
-    public String generateToken(String userName) {
+    public String generateToken(String userName, Long memberId) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("memberId", memberId);
         return createToken(claims, userName);
     }
 

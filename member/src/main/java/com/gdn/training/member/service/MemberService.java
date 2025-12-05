@@ -44,7 +44,7 @@ public class MemberService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(member.getUsername());
+        String token = jwtUtil.generateToken(member.getUsername(), member.getId());
         return AuthResponse.builder()
                 .token(token)
                 .memberId(member.getId())
