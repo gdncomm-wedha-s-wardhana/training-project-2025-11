@@ -8,8 +8,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gdn.training.cart.dto.CartDto;
+import com.gdn.training.cart.dto.CartItemDto;
+import com.gdn.training.cart.dto.GetCartResponse;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,16 +23,17 @@ public class CartService {
     private final CartRepository cartRepository;
 
     @Transactional
-    public Cart addToCart(AddToCartRequest request) {
-        Cart cart = cartRepository.findByMemberId(request.getMemberId())
+    public Cart addToCart(String username, AddToCartRequest request) {
+        Cart cart = cartRepository.findByUsername(username)
                 .orElseGet(() -> {
                     Cart newCart = Cart.builder()
-                            .memberId(request.getMemberId())
+                            .username(username)
                             .items(new ArrayList<>())
                             .build();
                     return cartRepository.save(newCart);
                 });
 
+        // Check if product already exists in cart
         Optional<CartItem> existingItem = cart.getItems().stream()
                 .filter(item -> item.getProductId().equals(request.getProductId()))
                 .findFirst();
@@ -47,17 +53,39 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    public Cart getCart(Long memberId) {
-        return cartRepository.findByMemberId(memberId)
+    @Transactional(readOnly = true)
+    public GetCartResponse getCart(String username) {
+        Cart cart = cartRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        List<CartItemDto> itemDtos = cart.getItems().stream()
+                .map(item -> CartItemDto.builder()
+                        .id(item.getId())
+                        .productId(item.getProductId())
+                        .quantity(item.getQuantity())
+                        .build())
+                .collect(Collectors.toList());
+
+        CartDto cartDto = CartDto.builder()
+                .id(cart.getId())
+                .username(cart.getUsername())
+                .items(itemDtos)
+                .build();
+
+        return GetCartResponse.builder()
+                .id(cart.getId())
+                .cart(cartDto)
+                .build();
     }
 
     @Transactional
-    public Cart removeFromCart(Long memberId, String productId) {
-        Cart cart = cartRepository.findByMemberId(memberId)
+    public Cart removeFromCart(String username, String productId) {
+        Cart cart = cartRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
-        cart.getItems().removeIf(item -> item.getProductId().equals(productId));
+        // Remove the entry of those product_id that related with the username
+        boolean removed = cart.getItems().removeIf(item -> item.getProductId().equals(productId));
+
         return cartRepository.save(cart);
     }
 }

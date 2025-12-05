@@ -1,6 +1,7 @@
 package com.gdn.training.cart.controller;
 
 import com.gdn.training.cart.dto.AddToCartRequest;
+import com.gdn.training.cart.dto.GetCartResponse;
 import com.gdn.training.cart.entity.Cart;
 import com.gdn.training.cart.service.CartService;
 import lombok.RequiredArgsConstructor;
@@ -15,17 +16,21 @@ public class CartController {
     private final CartService cartService;
 
     @PostMapping("/add")
-    public ResponseEntity<Cart> addToCart(@RequestBody AddToCartRequest request) {
-        return ResponseEntity.ok(cartService.addToCart(request));
+    public ResponseEntity<Cart> addToCart(
+            @RequestHeader("X-User-Name") String username,
+            @RequestBody AddToCartRequest request) {
+        return ResponseEntity.ok(cartService.addToCart(username, request));
     }
 
-    @GetMapping("/{memberId}")
-    public ResponseEntity<Cart> getCart(@PathVariable Long memberId) {
-        return ResponseEntity.ok(cartService.getCart(memberId));
+    @GetMapping
+    public ResponseEntity<GetCartResponse> getCart(@RequestHeader("X-User-Name") String username) {
+        return ResponseEntity.ok(cartService.getCart(username));
     }
 
-    @DeleteMapping("/{memberId}/remove/{productId}")
-    public ResponseEntity<Cart> removeFromCart(@PathVariable Long memberId, @PathVariable String productId) {
-        return ResponseEntity.ok(cartService.removeFromCart(memberId, productId));
+    @DeleteMapping("/remove/{productId}")
+    public ResponseEntity<Cart> removeFromCart(
+            @RequestHeader("X-User-Name") String username,
+            @PathVariable String productId) {
+        return ResponseEntity.ok(cartService.removeFromCart(username, productId));
     }
 }

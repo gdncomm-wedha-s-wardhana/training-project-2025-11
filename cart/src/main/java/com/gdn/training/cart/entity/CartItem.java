@@ -18,6 +18,9 @@ public class CartItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
     @ManyToOne
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;

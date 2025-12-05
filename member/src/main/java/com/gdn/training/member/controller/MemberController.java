@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,7 +34,18 @@ public class MemberController {
     @Operation(summary = "Login member", description = "Login with username and password to get JWT token")
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
-        return ResponseEntity.ok(memberService.login(request));
+        AuthResponse authResponse = memberService.login(request);
+
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
+                .httpOnly(true)
+                .secure(false) // Set to true in production
+                .path("/")
+                .maxAge(30 * 60) // 30 minutes
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(authResponse);
     }
 
     @Operation(summary = "Logout member", description = "Logout by invalidating the JWT token")
